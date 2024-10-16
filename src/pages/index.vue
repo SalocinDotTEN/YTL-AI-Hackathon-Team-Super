@@ -8,7 +8,7 @@
             <v-file-input
               v-model="file1"
               accept="application/pdf"
-              label="PDF Document 1"
+              label="Original PDF"
               outlined
               @change="loadPdf(1)"
             />
@@ -17,7 +17,7 @@
             <v-file-input
               v-model="file2"
               accept="application/pdf"
-              label="PDF Document 2"
+              label="Updated PDF"
               outlined
               @change="loadPdf(2)"
             />
@@ -25,7 +25,7 @@
         </v-row>
         <v-btn class="mt-4" color="primary" :disabled="!file1 || !file2" @click="comparePdfs"> Compare PDFs </v-btn>
         <v-card v-if="differences" class="mt-4">
-          <v-card-title>Differences:</v-card-title>
+          <v-card-title>Differences (red is removed, green is added):</v-card-title>
           <v-card-text>
             <div v-html="differences" />
           </v-card-text>
@@ -54,6 +54,8 @@
       const file2 = ref(null)
       const text1 = ref('')
       const text2 = ref('')
+      const html1 = ref('')
+      const html2 = ref('')
       const differences = ref('')
       const aiAnalysis = ref('')
 
@@ -67,18 +69,23 @@
           const arrayBuffer = await file.arrayBuffer()
           const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
           let fullText = ''
+          let fullHtml = ''
 
           for (let i = 1; i <= pdf.numPages; i++) {
             const page = await pdf.getPage(i)
             const textContent = await page.getTextContent()
             const pageText = textContent.items.map(item => item.str).join(' ')
+            const pageHtml = textContent.items.map(item => `<span>${item.str}</span>`).join(' ')
             fullText += pageText + ' '
+            fullHtml += `<div>${pageHtml}</div>`
           }
 
           if (fileNumber === 1) {
             text1.value = fullText
+            html1.value = fullHtml
           } else {
             text2.value = fullText
+            html2.value = fullHtml
           }
         } catch (error) {
           console.error('Error parsing PDF:', error)
@@ -100,9 +107,9 @@
           if (op === 0) {
             html += `<span>${text}</span>`
           } else if (op === -1) {
-            html += `<span class="red lighten-4 text-decoration-line-through">${text}</span>`
+            html += `<span class="bg-red lighten-4">${text}</span>`
           } else {
-            html += `<span class="green lighten-4">${text}</span>`
+            html += `<span class="bg-green lighten-4">${text}</span>`
           }
         }
         differences.value = html
@@ -121,6 +128,10 @@
       return {
         file1,
         file2,
+        text1,
+        text2,
+        html1,
+        html2,
         differences,
         aiAnalysis,
         loadPdf,
