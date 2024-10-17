@@ -5,7 +5,7 @@
         <template #prepend>
           <v-app-bar-nav-icon v-if="$vuetify.display.smAndDown" @click="drawer = !drawer" />
         </template>
-        <v-img class="me-sm-8" max-width="40" src="https://cdn.vuetifyjs.com/docs/images/logos/v.svg" />
+        <v-img class="me-sm-8 d-xs-none" max-width="300" src="../assets/bnm_logo_L.svg" />
         <template v-if="$vuetify.display.mdAndUp">
           <v-btn
             v-for="(item, i) in items"
@@ -38,6 +38,9 @@
         width="355"
       >
         <v-list class="py-0" slim>
+          <v-list-item>
+            <v-img class="me-sm-8" max-width="300" src="../assets/bnm_logo_L.svg" />
+          </v-list-item>
           <v-list-item
             v-for="(item, i) in items"
             :key="i"
