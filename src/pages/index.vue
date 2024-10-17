@@ -1,23 +1,25 @@
 <template>
   <v-container>
     <v-row>
-      <v-col cols="12" md="6" transition="scroll-x-transition">
+      <v-col cols="12" md="6">
         <v-file-input
           v-model="file1"
           accept="application/pdf"
-          class="animate__animated animate__fadeInLeft"
+          hint="Please upload the original PDF to compare against."
           label="Original PDF"
           outlined
+          persistent-hint
           @change="loadPdf(1)"
         />
       </v-col>
-      <v-col cols="12" md="6" transition="scroll-x-reverse-transition">
+      <v-col cols="12" md="6">
         <v-file-input
           v-model="file2"
           accept="application/pdf"
-          class="animate__animated animate__fadeInRight"
+          hint="Please upload the updated PDF to compare with the original."
           label="Updated PDF"
           outlined
+          persistent-hint
           @change="loadPdf(2)"
         />
       </v-col>
