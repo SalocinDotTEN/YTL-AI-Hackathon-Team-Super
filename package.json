@@ -12,6 +12,7 @@
     "axios": "^1.7.7",
     "core-js": "^3.37.1",
     "diff-match-patch": "^1.0.5",
+    "gapi-script": "^1.2.0",
     "pdfjs": "^2.5.3",
     "pdfjs-dist": "^4.7.76",
     "roboto-fontface": "*",
