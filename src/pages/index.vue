@@ -1,50 +1,46 @@
 <template>
-  <v-app>
-    <v-main>
-      <v-container>
-        <v-row>
-          <v-col cols="12" md="6">
-            <v-file-input
-              v-model="file1"
-              accept="application/pdf"
-              class="animate__animated animate__fadeInLeft"
-              label="Original PDF"
-              outlined
-              @change="loadPdf(1)"
-            />
-          </v-col>
-          <v-col cols="12" md="6">
-            <v-file-input
-              v-model="file2"
-              accept="application/pdf"
-              class="animate__animated animate__fadeInRight"
-              label="Updated PDF"
-              outlined
-              @change="loadPdf(2)"
-            />
-          </v-col>
-        </v-row>
-        <v-btn
-          class="mt-4 animate__animated animate__bounceIn"
-          color="primary"
-          :disabled="!file1 || !file2"
-          @click="comparePdfs"
-        > Compare PDFs </v-btn>
-        <v-card v-if="differences" class="mt-4 animate__animated animate__fadeInUp">
-          <v-card-title>Differences (red is removed, green is added):</v-card-title>
-          <v-card-text>
-            <div v-html="differences" />
-          </v-card-text>
-        </v-card>
-        <v-card v-if="aiAnalysis" class="mt-4 animate__animated animate__fadeInUp">
-          <v-card-title>AI Analysis:</v-card-title>
-          <v-card-text>
-            <p>{{ aiAnalysis }}</p>
-          </v-card-text>
-        </v-card>
-      </v-container>
-    </v-main>
-  </v-app>
+  <v-container>
+    <v-row>
+      <v-col cols="12" md="6">
+        <v-file-input
+          v-model="file1"
+          accept="application/pdf"
+          class="animate__animated animate__fadeInLeft"
+          label="Original PDF"
+          outlined
+          @change="loadPdf(1)"
+        />
+      </v-col>
+      <v-col cols="12" md="6">
+        <v-file-input
+          v-model="file2"
+          accept="application/pdf"
+          class="animate__animated animate__fadeInRight"
+          label="Updated PDF"
+          outlined
+          @change="loadPdf(2)"
+        />
+      </v-col>
+    </v-row>
+    <v-btn
+      class="mt-4 animate__animated animate__bounceIn"
+      color="primary"
+      :disabled="!file1 || !file2"
+      @click="comparePdfs"
+    > Compare PDFs </v-btn>
+    <v-card v-if="differences" class="mt-4 animate__animated animate__fadeInUp">
+      <v-card-title>Differences (red is removed, green is added):</v-card-title>
+      <v-card-text>
+        <div v-html="differences" />
+      </v-card-text>
+    </v-card>
+    <v-card v-if="aiAnalysis" class="mt-4 animate__animated animate__fadeInUp">
+      <v-card-title>AI Analysis:</v-card-title>
+      <v-card-text>
+        <p>{{ aiAnalysis }}</p>
+      </v-card-text>
+    </v-card>
+  </v-container>
 </template>
 <script>
   import { ref } from 'vue'
