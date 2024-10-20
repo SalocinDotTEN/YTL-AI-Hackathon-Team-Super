@@ -1,0 +1,60 @@
+[
+  {
+    "index": 0,
+    "message": {
+      "role": "assistant",
+      "content": {
+        "changes": [
+          {
+            "section": "Applicable to",
+            "change_type": "Modification",
+            "impact": "The term 'Licensed money-changing operators' was replaced with 'Licensed money services businesses,' expanding the scope of applicable institutions."
+          },
+          {
+            "section": "Issued on",
+            "change_type": "Modification",
+            "impact": "The issuance date was updated from '30 June 2020' to '15 April 2024,' reflecting the new version's effectiveness."
+          },
+          {
+            "section": "7.1",
+            "change_type": "Addition",
+            "impact": "Specifies the requirement for identification and verification processes to include both individuals and legal persons, enhancing KYC comprehensiveness."
+          },
+          {
+            "section": "8.1",
+            "change_type": "Addition",
+            "impact": "Introduces specific Board responsibilities related to ensuring satisfactory measures for legal persons, increasing accountability."
+          },
+          {
+            "section": "8.10",
+            "change_type": "Modification",
+            "impact": "Updates verification methods for individuals to include advanced technologies and provides stronger guidance on ensuring document authenticity."
+          },
+          {
+            "section": "Appendix 1",
+            "change_type": "Addition",
+            "impact": "Introduces examples of verification methods for legal persons, expanding the tools available for compliance."
+          },
+          {
+            "section": "Appendix 3",
+            "change_type": "Addition",
+            "impact": "Details the scope and criteria for external independent assessments, enhancing transparency and accountability for e-KYC solutions."
+          },
+          {
+            "section": "9.1",
+            "change_type": "Modification",
+            "impact": "Emphasizes the need for maintaining records of the e-KYC solution's performance, enhancing monitoring and compliance."
+          },
+          {
+            "section": "7.1",
+            "change_type": "Addition",
+            "impact": "Clarifies that this document supersedes the previous e-KYC policy document dated 30 June 2020, ensuring clarity in regulatory updates."
+          }
+        ]
+      },
+      "refusal": null
+    },
+    "logprobs": null,
+    "finish_reason": "stop"
+  }
+]
