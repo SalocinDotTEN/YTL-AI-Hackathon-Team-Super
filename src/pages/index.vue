@@ -33,7 +33,11 @@
     <v-card v-if="aiAnalysis" class="mt-4 animate__animated animate__fadeInUp">
       <v-card-title>AI Analysis:</v-card-title>
       <v-card-text>
-        <p>{{ aiAnalysis }}</p>
+        <v-data-table
+          :headers="['No', 'Affected Section', 'Summary of Impact']"
+          item-key="changes.id"
+          :items="aiAnalysis"
+        />
       </v-card-text>
     </v-card>
   </v-container>
@@ -44,6 +48,7 @@
   import axios from 'axios'
   import * as pdfjsLib from 'pdfjs-dist'
   import { gapi } from 'gapi-script'
+  import sampleOutput from '../assets/output.json'
 
   pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/4.7.76/pdf.worker.min.mjs`
 
@@ -151,15 +156,35 @@
         }
         differences.value = html
 
-        try {
-          const response = await axios.post('https://api.example.com/analyze-diff', {
-            diff,
-          })
-          aiAnalysis.value = response.data.analysis
-        } catch (error) {
-          console.error('Error calling AI service:', error)
-          aiAnalysis.value = 'Unable to perform AI analysis at this time.'
+        aiAnalysis.value = sampleOutput.message.content.changes
+        console.log('AI Analysis:', sampleOutput.message.content.changes)
+
+        // try {
+        //   const response = await axios.post('https://api.example.com/analyze-diff', {
+        //     diff,
+        //   })
+        //   aiAnalysis.value = response.data.analysis
+        // } catch (error) {
+        //   console.error('Error calling AI service:', error)
+        //   aiAnalysis.value = 'Unable to perform AI analysis at this time.'
+        // }
+      }
+
+      function formatAiAnalysis (analysis) {
+        if (!analysis || !analysis.changes) {
+          return 'No changes detected.'
         }
+
+        let formattedHtml = '<div class="ai-analysis">'
+        formattedHtml += '<h3>AI Analysis Changes:</h3>'
+        formattedHtml += '<ul>'
+
+        for (const change of analysis.changes) {
+          formattedHtml += `<li><strong>${change.type}:</strong> ${change.description}</li>`
+        }
+
+        formattedHtml += '</ul></div>'
+        return formattedHtml
       }
 
       return {
