@@ -30,25 +30,32 @@
       :disabled="!file1 || !file2"
       @click="comparePdfs"
     > Compare PDFs </v-btn>
-    <v-card v-if="aiAnalysis" class="mt-4 animate__animated animate__fadeInUp">
+    <v-card class="mt-4 animate__animated animate__fadeInUp">
       <v-card-title>AI Analysis:</v-card-title>
       <v-card-text>
         <v-data-table
-          :headers="['No', 'Affected Section', 'Summary of Impact']"
-          item-key="changes.id"
-          :items="aiAnalysis"
-        />
+          :headers="tableHeaders"
+          item-key="id"
+          :items="formatAiAnalysis"
+        >
+          <template #item="{ item }">
+            <tr>
+              <td>{{ item.id }}</td>
+              <td>{{ item.section }}</td>
+              <td>{{ item.impact }}</td>
+            </tr>
+          </template>
+        </v-data-table>
       </v-card-text>
     </v-card>
   </v-container>
 </template>
 <script>
   import { ref } from 'vue'
-  import { diff_match_patch } from 'diff-match-patch'
+  // import { diff_match_patch } from 'diff-match-patch'
   import axios from 'axios'
   import * as pdfjsLib from 'pdfjs-dist'
   import { gapi } from 'gapi-script'
-  import sampleOutput from '../assets/output.json'
 
   pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/4.7.76/pdf.worker.min.mjs`
 
@@ -60,10 +67,9 @@
       const text2 = ref('')
       const html1 = ref('')
       const html2 = ref('')
-      const differences = ref('')
-      const aiAnalysis = ref('')
+      const aiAnalysis = ref([])
 
-      const dmp = new diff_match_patch()
+      // const dmp = new diff_match_patch()
 
       const loadPdf = async fileNumber => {
         const file = fileNumber === 1 ? file1.value : file2.value
@@ -135,57 +141,43 @@
         })
       }
 
+      const tableHeaders = [
+        { title: 'No', align: 'start', key: 'id' },
+        { title: 'Affected Section', align: 'start', key: 'section' },
+        { title: 'Summary of Impact', align: 'start', key: 'impact' },
+      ]
+
       const comparePdfs = async () => {
         if (!text1.value || !text2.value) {
           alert('Please upload and parse both PDF files before comparing.')
           return
         }
 
-        const diff = dmp.diff_main(text1.value, text2.value)
-        dmp.diff_cleanupSemantic(diff)
-
-        let html = ''
-        for (const [op, text] of diff) {
-          if (op === 0) {
-            html += `<span>${text}</span>`
-          } else if (op === -1) {
-            html += `<span class="bg-red lighten-4">${text}</span>`
-          } else {
-            html += `<span class="bg-green lighten-4">${text}</span>`
-          }
+        try {
+          await axios.get('https://6714d38a690bf212c762a3ff.mockapi.io/tinkerers/sample-output')
+            .then(response => {
+              aiAnalysis.value = response.data[0].message.content.changes.map((change, index) => ({
+                id: index + 1,
+                section: change.section,
+                impact: change.impact,
+              }))
+            }).catch(error => {
+              console.error('Error calling AI service:', error)
+              aiAnalysis.value = 'Unable to perform AI analysis at this time.'
+            })
+        } catch (error) {
+          console.error('Error calling AI service:', error)
+          aiAnalysis.value = 'Unable to perform AI analysis at this time.'
         }
-        differences.value = html
-
-        aiAnalysis.value = sampleOutput.message.content.changes
-        console.log('AI Analysis:', sampleOutput.message.content.changes)
-
-        // try {
-        //   const response = await axios.post('https://api.example.com/analyze-diff', {
-        //     diff,
-        //   })
-        //   aiAnalysis.value = response.data.analysis
-        // } catch (error) {
-        //   console.error('Error calling AI service:', error)
-        //   aiAnalysis.value = 'Unable to perform AI analysis at this time.'
-        // }
       }
 
-      function formatAiAnalysis (analysis) {
-        if (!analysis || !analysis.changes) {
-          return 'No changes detected.'
-        }
-
-        let formattedHtml = '<div class="ai-analysis">'
-        formattedHtml += '<h3>AI Analysis Changes:</h3>'
-        formattedHtml += '<ul>'
-
-        for (const change of analysis.changes) {
-          formattedHtml += `<li><strong>${change.type}:</strong> ${change.description}</li>`
-        }
-
-        formattedHtml += '</ul></div>'
-        return formattedHtml
-      }
+      const formatAiAnalysis = computed(() => {
+        return aiAnalysis.value.map((change, index) => ({
+          id: index + 1,
+          section: change.section,
+          impact: change.impact,
+        }))
+      })
 
       return {
         file1,
@@ -194,8 +186,8 @@
         text2,
         html1,
         html2,
-        differences,
-        aiAnalysis,
+        tableHeaders,
+        formatAiAnalysis,
         loadPdf,
         comparePdfs,
       }
