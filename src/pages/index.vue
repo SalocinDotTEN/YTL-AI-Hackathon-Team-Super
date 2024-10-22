@@ -93,11 +93,11 @@
           if (fileNumber === 1) {
             text1.value = fullText
             html1.value = fullHtml
-            await uploadToGoogleDrive(file, '1IDWV99Em-6pKCuaxObBlNsyvbAnTpNME')
+            await uploadToGoogleDrive(file, '1qJ93Z2wFgBOm1vs-gkmZbw4lmW_sVhJy')
           } else {
             text2.value = fullText
             html2.value = fullHtml
-            await uploadToGoogleDrive(file, '1w_h_qpSHDxfWQCVGDvGPe6VhH4d6GgcE')
+            await uploadToGoogleDrive(file, '1cYWYfcicMEr4UIAT0dNi7kt67kPUFW9W')
           }
         } catch (error) {
           console.error('Error parsing PDF:', error)
