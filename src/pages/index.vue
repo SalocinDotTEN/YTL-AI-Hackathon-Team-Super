@@ -154,7 +154,7 @@
         }
 
         try {
-          await axios.get('https://6714d38a690bf212c762a3ff.mockapi.io/tinkerers/sample-output')
+          await axios.get('https://puv111.app.n8n.cloud/webhook-test/6309145b-b7c9-42ac-a536-31d798ecf7a7')
             .then(response => {
               aiAnalysis.value = response.data[0].message.content.changes.map((change, index) => ({
                 id: index + 1,
