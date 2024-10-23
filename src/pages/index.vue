@@ -24,20 +24,12 @@
         />
       </v-col>
     </v-row>
-    <v-btn
-      class="mt-4 animate__animated animate__bounceIn"
-      color="primary"
-      :disabled="!file1 || !file2"
-      @click="comparePdfs"
-    > Compare PDFs </v-btn>
+    <v-btn class="mt-4 animate__animated animate__bounceIn" color="primary"> Compare PDFs </v-btn>
     <v-card class="mt-4 animate__animated animate__fadeInUp">
       <v-card-title>AI Analysis:</v-card-title>
       <v-card-text>
-        <v-data-table
-          :headers="tableHeaders"
-          item-key="id"
-          :items="formatAiAnalysis"
-        >
+        {{ aiAnalysis }}
+        <!-- <v-data-table :headers="tableHeaders" item-key="id" :items="formatAiAnalysis">
           <template #item="{ item }">
             <tr>
               <td>{{ item.id }}</td>
@@ -45,7 +37,7 @@
               <td>{{ item.impact }}</td>
             </tr>
           </template>
-        </v-data-table>
+        </v-data-table> -->
       </v-card-text>
     </v-card>
   </v-container>
@@ -93,52 +85,15 @@
           if (fileNumber === 1) {
             text1.value = fullText
             html1.value = fullHtml
-            await uploadToGoogleDrive(file, '1qJ93Z2wFgBOm1vs-gkmZbw4lmW_sVhJy')
           } else {
             text2.value = fullText
             html2.value = fullHtml
-            await uploadToGoogleDrive(file, '1cYWYfcicMEr4UIAT0dNi7kt67kPUFW9W')
           }
+          await uploadToEndpoint()
         } catch (error) {
           console.error('Error parsing PDF:', error)
           alert(`Error parsing PDF ${fileNumber}. Please try another file.`)
         }
-      }
-
-      const uploadToGoogleDrive = async (file, folderId) => {
-        const CLIENT_ID = '857888640400-6khe7mul45dgamd58r58pgvgcgioor7o.apps.googleusercontent.com'
-        const API_KEY = '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'
-        const SCOPES = 'https://www.googleapis.com/auth/drive.file'
-
-        gapi.load('client:auth2', () => {
-          gapi.client.init({
-            apiKey: API_KEY,
-            clientId: CLIENT_ID,
-            discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
-            scope: SCOPES,
-          }).then(() => {
-            gapi.auth2.getAuthInstance().signIn().then(() => {
-              const accessToken = gapi.auth.getToken().access_token
-              const form = new FormData()
-              form.append('metadata', new Blob([JSON.stringify({
-                name: file.name,
-                mimeType: file.type,
-                parents: [folderId],
-              })], { type: 'application/json' }))
-              form.append('file', file)
-
-              fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-                method: 'POST',
-                headers: new Headers({ Authorization: 'Bearer ' + accessToken }),
-                body: form,
-              }).then(response => response.json()).then(data => {
-                console.log('File uploaded to Google Drive:', data)
-              }).catch(error => {
-                console.error('Error uploading file to Google Drive:', error)
-              })
-            })
-          })
-        })
       }
 
       const tableHeaders = [
@@ -146,6 +101,39 @@
         { title: 'Affected Section', align: 'start', key: 'section' },
         { title: 'Summary of Impact', align: 'start', key: 'impact' },
       ]
+
+      const uploadToEndpoint = async () => {
+        if (!file1.value || !file2.value) {
+          alert('Please upload both PDF files before uploading.')
+          return
+        }
+
+        const formData = new FormData()
+        formData.append('Original_File', file1.value)
+        formData.append('Updated_File', file2.value)
+
+        try {
+          await axios.post('https://puv111.app.n8n.cloud/webhook-test/ai-tinkerers-kl-hackathon', formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          }).then(response => {
+            console.log('Files uploaded successfully:', response.data)
+            // aiAnalysis.value = response.data[0].message.content.changes.map((change, index) => ({
+            //   id: index + 1,
+            //   section: change.section,
+            //   impact: change.impact,
+            // }
+            aiAnalysis.value = response.data[0].message.content
+          }).catch(error => {
+            console.error('Error uploading files:', error)
+            alert('Error uploading files. Please try again.')
+          })
+        } catch (error) {
+          console.error('Error uploading files:', error)
+          alert('Error uploading files. Please try again.')
+        }
+      }
 
       const comparePdfs = async () => {
         if (!text1.value || !text2.value) {
