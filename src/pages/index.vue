@@ -66,33 +66,8 @@
       const loadPdf = async fileNumber => {
         const file = fileNumber === 1 ? file1.value : file2.value
         if (!file) return
-
-        try {
-          const arrayBuffer = await file.arrayBuffer()
-          const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
-          let fullText = ''
-          let fullHtml = ''
-
-          for (let i = 1; i <= pdf.numPages; i++) {
-            const page = await pdf.getPage(i)
-            const textContent = await page.getTextContent()
-            const pageText = textContent.items.map(item => item.str).join(' ')
-            const pageHtml = textContent.items.map(item => `<span>${item.str}</span>`).join(' ')
-            fullText += pageText + ' '
-            fullHtml += `<div>${pageHtml}</div>`
-          }
-
-          if (fileNumber === 1) {
-            text1.value = fullText
-            html1.value = fullHtml
-          } else {
-            text2.value = fullText
-            html2.value = fullHtml
-          }
+        if (file1.value && file2.value) {
           await uploadToEndpoint()
-        } catch (error) {
-          console.error('Error parsing PDF:', error)
-          alert(`Error parsing PDF ${fileNumber}. Please try another file.`)
         }
       }
 
@@ -124,7 +99,7 @@
             //   section: change.section,
             //   impact: change.impact,
             // }
-            aiAnalysis.value = response.data[0].message.content
+            aiAnalysis.value = response.data['Input 1'][0].message.content
           }).catch(error => {
             console.error('Error uploading files:', error)
             alert('Error uploading files. Please try again.')
