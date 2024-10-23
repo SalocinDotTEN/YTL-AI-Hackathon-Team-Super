@@ -34,14 +34,6 @@
     <v-card v-if="comparisonResults.length > 0" class="mt-4 animate__animated animate__fadeInUp">
       <v-card-title class="d-flex align-center">
         <span>Change Analysis Summary</span>
-        <v-spacer />
-        <v-chip
-          v-for="(count, significance) in significanceCounts"
-          :key="significance"
-          class="ml-2"
-          :color="getSignificanceColor(significance)"
-        > {{ significance }}: {{ count }}
-        </v-chip>
       </v-card-title>
       <v-card-text>
         <v-data-table
