@@ -1,48 +1,165 @@
 <template>
   <v-container>
-    <v-card class="mt-4 animate__animated animate__fadeInUp">
-      <v-card-title>AI Analysis:</v-card-title>
-      <v-card-text>
-        <v-data-table
-          :headers="tableHeaders"
-          item-key="id"
-          :items="formattedAiAnalysis"
+    <v-row>
+      <v-col cols="12" md="6">
+        <v-file-input
+          v-model="file1"
+          accept="application/pdf"
+          hint="Please upload the original PDF to compare against."
+          label="Original PDF"
+          outlined
+          persistent-hint
+          @change="loadPdf(1)"
         />
+      </v-col>
+      <v-col cols="12" md="6">
+        <v-file-input
+          v-model="file2"
+          accept="application/pdf"
+          hint="Please upload the updated PDF to compare with the original."
+          label="Updated PDF"
+          outlined
+          persistent-hint
+          @change="loadPdf(2)"
+        />
+      </v-col>
+    </v-row>
+    <v-btn
+      class="mt-4 animate__animated animate__bounceIn"
+      color="primary"
+      :disabled="!file1 || !file2"
+      :loading="loading"
+      @click="uploadToEndpoint"
+    > Compare PDFs </v-btn>
+    <v-card>
+      <v-tabs v-model="tab" grow>
+        <v-tab value="comparison">Comparison</v-tab>
+        <v-tab value="analysis">Analysis</v-tab>
+      </v-tabs>
+      <v-card-text>
+        <v-tabs-window v-model="tab">
+          <v-tabs-window-item value="comparison">
+            <v-textarea
+              label="Overall Summary"
+              :model-value="Object.entries(overallSummary).length !== 0 ? overallSummary : ''"
+              outlined
+              readonly
+              rows="5"
+            />
+            <v-data-table
+              item-key="index"
+              :items="comparisonResults"
+              :loading="loading"
+              :no-data-text="loading ? 'Loading...' : 'No data available'"
+            />
+          </v-tabs-window-item>
+          <v-tabs-window-item value="analysis">
+            <v-textarea
+              label="Overall Analysis Summary"
+              :model-value="Object.entries(analysisSummary).length !== 0 ? analysisSummary : ''"
+              outlined
+              readonly
+              rows="5"
+            />
+            <v-data-table
+              item-key="index"
+              :items="analysisResults"
+              :loading="loading"
+              :no-data-text="loading ? 'Loading...' : 'No data available'"
+            />
+          </v-tabs-window-item>
+        </v-tabs-window>
       </v-card-text>
     </v-card>
   </v-container>
 </template>
 <script>
   import { computed, ref } from 'vue'
-  import sampleOutput from '../assets/output.json'
+  import axios from 'axios'
 
   export default {
     setup () {
-      const aiAnalysis = ref([])
+      const file1 = ref(null)
+      const file2 = ref(null)
+      const loading = ref(false)
+      const comparisonResults = ref([])
+      const analysisResults = ref([])
+      const overallSummary = ref({})
+      const analysisSummary = ref({})
 
-      aiAnalysis.value = sampleOutput[0].message.content.changes.map((change, index) => ({
-        id: index + 1,
-        section: change.section,
-        impact: change.impact,
-      }))
+      const loadPdf = async fileNumber => {
+        const file = fileNumber === 1 ? file1.value : file2.value
+        if (!file) return
+        comparisonResults.value = []
+      }
 
-      const tableHeaders = [
-        { title: 'No', align: 'start', key: 'id' },
-        { title: 'Affected Section', align: 'start', key: 'section' },
-        { title: 'Summary of Impact', align: 'start', key: 'impact' },
-      ]
+      const uploadToEndpoint = async () => {
+        // if (!file1.value || !file2.value) {
+        //   alert('Please upload both PDF files before comparing.')
+        //   return
+        // }
 
-      const formattedAiAnalysis = computed(() => {
-        return aiAnalysis.value.map((change, index) => ({
-          id: index + 1,
-          section: change.section,
-          impact: change.impact,
-        }))
-      })
+        // loading.value = true
+        // const formData = new FormData()
+        // formData.append('Original_File', file1.value)
+        // formData.append('Updated_File', file2.value)
+
+        try {
+          const response = await axios.get(
+            'https://6714d38a690bf212c762a3ff.mockapi.io/tinkerers/comparison',
+            {
+              headers: {
+                'Content-Type': 'text/json',
+              },
+            }
+          )
+
+          const content = response.data[0]['Input 1'][0].message.content
+          comparisonResults.value = content.comparison
+          overallSummary.value = JSON.stringify(content.overall_summary)
+
+          try {
+            const analysisResponse = await axios.get(
+              'https://6714d38a690bf212c762a3ff.mockapi.io/tinkerers/analysis',
+              {
+                headers: {
+                  'Content-Type': 'text/json',
+                },
+              }
+            )
+            // const analysisContent = analysisResponse.data[0]['Input 1'][0].message.content
+            const analysisContent = analysisResponse.data
+            analysisResults.value = analysisContent
+            analysisSummary.value = 'Summary of analysis here'
+          } catch (error) {
+            console.error('Error analyzing:', error)
+            alert('Error analyzing. Please try again.')
+          } finally {
+            loading.value = false
+          }
+        } catch (error) {
+          console.error('Error uploading files:', error)
+          alert('Error uploading files. Please try again.')
+        } finally {
+          loading.value = false
+        }
+      }
 
       return {
-        tableHeaders,
-        formattedAiAnalysis,
+        file1,
+        file2,
+        loadPdf,
+        loading,
+        comparisonResults,
+        analysisResults,
+        overallSummary,
+        analysisSummary,
+        uploadToEndpoint,
+      }
+    },
+    data () {
+      return {
+        tab: 'comparison',
       }
     },
   }
