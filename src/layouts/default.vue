@@ -45,6 +45,7 @@
             v-for="(item, i) in items"
             :key="i"
             :active="i === 0"
+            :href="item.href"
             link
             :prepend-icon="item.icon"
             :title="item.text"
@@ -72,7 +73,7 @@
 
   const items = [
     { text: 'Document Comparer' },
-    { text: 'Knowledgebase' },
+    { text: 'Knowledgebase', href: '/knowledgebase' },
     { text: 'Calendar' },
     { text: 'Analytics' },
     { text: 'Inbox' },
