@@ -31,46 +31,35 @@
       :loading="loading"
       @click="uploadToEndpoint"
     > Compare PDFs </v-btn>
-    <v-card v-if="comparisonResults.length > 0" class="mt-4 animate__animated animate__fadeInUp">
-      <v-card-title class="d-flex align-center">
-        <span>Change Analysis Summary</span>
-      </v-card-title>
+    <v-card>
+      <v-tabs
+        v-model="tab"
+        grow
+      >
+        <v-tab value="comparison">Comparison</v-tab>
+        <v-tab value="analysis">Analysis</v-tab>
+      </v-tabs>
       <v-card-text>
-        <v-data-table
-          class="elevation-1"
-          :headers="headers"
-          :items="tableItems"
-          :items-per-page="10"
-          @click:row="handleRowClick"
-        >
-          <template #item.changeCount="{ item }">
-            {{ item.changeCount }}
-          </template>
-          <template #item.section="{ item }">
-            <div>
-              <strong>{{ item.section }}</strong>
-              <div class="caption grey--text">Section {{ item.subSection }}</div>
-            </div>
-          </template>
-          <template #expanded-item="{ headers, item }">
-            <td class="pa-4" :colspan="headers.length">
-              <v-row>
-                <v-col cols="6">
-                  <strong>Original Version:</strong>
-                  <div class="mt-2">{{ item.oldVersion }}</div>
-                </v-col>
-                <v-col cols="6">
-                  <strong>New Version:</strong>
-                  <div class="mt-2">{{ item.newVersion }}</div>
-                </v-col>
-                <v-col class="mt-4" cols="12">
-                  <strong>Changes Identified:</strong>
-                  <div class="mt-2">{{ item.changesIdentified }}</div>
-                </v-col>
-              </v-row>
-            </td>
-          </template>
-        </v-data-table>
+        <v-tabs-window v-model="tab">
+          <v-tabs-window-item value="comparison">
+            <v-textarea
+              label="Overall Summary"
+              :model-value="overallSummary ? overallSummary.summary : ''"
+              outlined
+              readonly
+              rows="5"
+            />
+            <v-data-table
+              item-key="index"
+              :items="comparisonResults"
+              :loading="loading"
+              :no-data-text="loading ? 'Loading...' : 'No data available'"
+            />
+          </v-tabs-window-item>
+          <v-tabs-window-item value="analysis">
+            Analysis Table
+          </v-tabs-window-item>
+        </v-tabs-window>
       </v-card-text>
     </v-card>
   </v-container>
@@ -85,26 +74,7 @@
       const file2 = ref(null)
       const loading = ref(false)
       const comparisonResults = ref([])
-
-      const headers = [
-        {
-          title: 'No.',
-          align: 'center',
-          value: 'changeCount',
-          width: '100px',
-        },
-        {
-          title: 'Affected Section',
-          align: 'start',
-          value: 'section',
-          width: '300px',
-        },
-        {
-          title: 'Summary of Impact',
-          align: 'start',
-          value: 'changesIdentified',
-        },
-      ]
+      const overallSummary = ref({})
 
       const tableItems = computed(() => {
         return comparisonResults.value.map((result, index) => ({
@@ -113,74 +83,6 @@
           id: index,
         }))
       })
-
-      const parseResults = content => {
-        const sections = content.split('---').filter(section => section.trim())
-
-        return sections.map(section => {
-          const lines = section.trim().split('\n')
-          const result = {}
-
-          // Parse section info
-          const sectionMatch = section.match(/\*\*Section :\*\* (.*?) \*\*/)
-          const subSectionMatch = section.match(/\*\* Sub-Section : (.*?)\*\*/)
-
-          result.section = sectionMatch ? sectionMatch[1].trim() : ''
-          result.subSection = subSectionMatch ? subSectionMatch[1].trim() : ''
-
-          // Parse versions and changes
-          lines.forEach(line => {
-            if (line.includes('**Old Version**:')) {
-              result.oldVersion = line.split('**Old Version**:')[1].trim()
-            }
-            if (line.includes('**New Version**:')) {
-              result.newVersion = line.split('**New Version**:')[1].trim()
-            }
-            if (line.includes('**Changes Identified**:')) {
-              result.changesIdentified = line.split('**Changes Identified**:')[1].trim()
-            }
-            if (line.includes('**Significance**:')) {
-              result.significance = line.split('**Significance**:')[1].trim()
-            }
-          })
-
-          if (result.significance === 'No change') {
-            result.significance = 'Low'
-          }
-
-          return result
-        })
-      }
-
-      const significanceCounts = computed(() => {
-        const counts = {
-          High: 0,
-          Medium: 0,
-          Low: 0,
-        }
-
-        comparisonResults.value.forEach(result => {
-          if (result.significance) {
-            counts[result.significance] = (counts[result.significance] || 0) + 1
-          }
-        })
-
-        return counts
-      })
-
-      const getSignificanceColor = significance => {
-        const colors = {
-          High: 'error',
-          Medium: 'warning',
-          Low: 'success',
-        }
-        return colors[significance] || 'grey'
-      }
-
-      const handleRowClick = item => {
-        // Handle row click if needed
-        console.log('Row clicked:', item)
-      }
 
       const loadPdf = async fileNumber => {
         const file = fileNumber === 1 ? file1.value : file2.value
@@ -211,7 +113,8 @@
           )
 
           const content = response.data['Input 1'][0].message.content
-          comparisonResults.value = parseResults(content)
+          comparisonResults.value = content.comparison
+          overallSummary.value = content.overall_summary
         } catch (error) {
           console.error('Error uploading files:', error)
           alert('Error uploading files. Please try again.')
@@ -225,13 +128,15 @@
         file2,
         loading,
         comparisonResults,
-        significanceCounts,
-        getSignificanceColor,
+        overallSummary,
         loadPdf,
         uploadToEndpoint,
-        headers,
         tableItems,
-        handleRowClick,
+      }
+    },
+    data () {
+      return {
+        tab: null,
       }
     },
   }
