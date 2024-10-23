@@ -24,139 +24,240 @@
         />
       </v-col>
     </v-row>
-    <v-btn class="mt-4 animate__animated animate__bounceIn" color="primary"> Compare PDFs </v-btn>
-    <v-card class="mt-4 animate__animated animate__fadeInUp">
-      <v-card-title>AI Analysis:</v-card-title>
+    <v-btn
+      class="mt-4 animate__animated animate__bounceIn"
+      color="primary"
+      :disabled="!file1 || !file2"
+      :loading="loading"
+      @click="uploadToEndpoint"
+    > Compare PDFs </v-btn>
+    <v-card v-if="comparisonResults.length > 0" class="mt-4 animate__animated animate__fadeInUp">
+      <v-card-title class="d-flex align-center">
+        <span>Change Analysis Summary</span>
+        <v-spacer />
+        <v-chip
+          v-for="(count, significance) in significanceCounts"
+          :key="significance"
+          class="ml-2"
+          :color="getSignificanceColor(significance)"
+        > {{ significance }}: {{ count }}
+        </v-chip>
+      </v-card-title>
       <v-card-text>
-        {{ aiAnalysis }}
-        <!-- <v-data-table :headers="tableHeaders" item-key="id" :items="formatAiAnalysis">
-          <template #item="{ item }">
-            <tr>
-              <td>{{ item.id }}</td>
-              <td>{{ item.section }}</td>
-              <td>{{ item.impact }}</td>
-            </tr>
+        <v-data-table
+          class="elevation-1"
+          :headers="headers"
+          :items="tableItems"
+          :items-per-page="10"
+          @click:row="handleRowClick"
+        >
+          <template #item.changeCount="{ item }">
+            {{ item.changeCount }}
           </template>
-        </v-data-table> -->
+          <template #item.section="{ item }">
+            <div>
+              <strong>{{ item.section }}</strong>
+              <div class="caption grey--text">Section {{ item.subSection }}</div>
+            </div>
+          </template>
+          <template #expanded-item="{ headers, item }">
+            <td class="pa-4" :colspan="headers.length">
+              <v-row>
+                <v-col cols="6">
+                  <strong>Original Version:</strong>
+                  <div class="mt-2">{{ item.oldVersion }}</div>
+                </v-col>
+                <v-col cols="6">
+                  <strong>New Version:</strong>
+                  <div class="mt-2">{{ item.newVersion }}</div>
+                </v-col>
+                <v-col class="mt-4" cols="12">
+                  <strong>Changes Identified:</strong>
+                  <div class="mt-2">{{ item.changesIdentified }}</div>
+                </v-col>
+              </v-row>
+            </td>
+          </template>
+        </v-data-table>
       </v-card-text>
     </v-card>
   </v-container>
 </template>
 <script>
-  import { ref } from 'vue'
-  // import { diff_match_patch } from 'diff-match-patch'
+  import { computed, ref } from 'vue'
   import axios from 'axios'
-  import * as pdfjsLib from 'pdfjs-dist'
-  import { gapi } from 'gapi-script'
-
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/4.7.76/pdf.worker.min.mjs`
 
   export default {
     setup () {
       const file1 = ref(null)
       const file2 = ref(null)
-      const text1 = ref('')
-      const text2 = ref('')
-      const html1 = ref('')
-      const html2 = ref('')
-      const aiAnalysis = ref([])
+      const loading = ref(false)
+      const comparisonResults = ref([])
 
-      // const dmp = new diff_match_patch()
+      const headers = [
+        {
+          title: 'No.',
+          align: 'center',
+          value: 'changeCount',
+          width: '100px',
+        },
+        {
+          title: 'Affected Section',
+          align: 'start',
+          value: 'section',
+          width: '300px',
+        },
+        {
+          title: 'Summary of Impact',
+          align: 'start',
+          value: 'changesIdentified',
+        },
+      ]
+
+      const tableItems = computed(() => {
+        return comparisonResults.value.map((result, index) => ({
+          ...result,
+          changeCount: index + 1,
+          id: index,
+        }))
+      })
+
+      const parseResults = content => {
+        const sections = content.split('---').filter(section => section.trim())
+
+        return sections.map(section => {
+          const lines = section.trim().split('\n')
+          const result = {}
+
+          // Parse section info
+          const sectionMatch = section.match(/\*\*Section :\*\* (.*?) \*\*/)
+          const subSectionMatch = section.match(/\*\* Sub-Section : (.*?)\*\*/)
+
+          result.section = sectionMatch ? sectionMatch[1].trim() : ''
+          result.subSection = subSectionMatch ? subSectionMatch[1].trim() : ''
+
+          // Parse versions and changes
+          lines.forEach(line => {
+            if (line.includes('**Old Version**:')) {
+              result.oldVersion = line.split('**Old Version**:')[1].trim()
+            }
+            if (line.includes('**New Version**:')) {
+              result.newVersion = line.split('**New Version**:')[1].trim()
+            }
+            if (line.includes('**Changes Identified**:')) {
+              result.changesIdentified = line.split('**Changes Identified**:')[1].trim()
+            }
+            if (line.includes('**Significance**:')) {
+              result.significance = line.split('**Significance**:')[1].trim()
+            }
+          })
+
+          if (result.significance === 'No change') {
+            result.significance = 'Low'
+          }
+
+          return result
+        })
+      }
+
+      const significanceCounts = computed(() => {
+        const counts = {
+          High: 0,
+          Medium: 0,
+          Low: 0,
+        }
+
+        comparisonResults.value.forEach(result => {
+          if (result.significance) {
+            counts[result.significance] = (counts[result.significance] || 0) + 1
+          }
+        })
+
+        return counts
+      })
+
+      const getSignificanceColor = significance => {
+        const colors = {
+          High: 'error',
+          Medium: 'warning',
+          Low: 'success',
+        }
+        return colors[significance] || 'grey'
+      }
+
+      const handleRowClick = item => {
+        // Handle row click if needed
+        console.log('Row clicked:', item)
+      }
 
       const loadPdf = async fileNumber => {
         const file = fileNumber === 1 ? file1.value : file2.value
         if (!file) return
-        if (file1.value && file2.value) {
-          await uploadToEndpoint()
-        }
+        comparisonResults.value = []
       }
-
-      const tableHeaders = [
-        { title: 'No', align: 'start', key: 'id' },
-        { title: 'Affected Section', align: 'start', key: 'section' },
-        { title: 'Summary of Impact', align: 'start', key: 'impact' },
-      ]
 
       const uploadToEndpoint = async () => {
         if (!file1.value || !file2.value) {
-          alert('Please upload both PDF files before uploading.')
+          alert('Please upload both PDF files before comparing.')
           return
         }
 
+        loading.value = true
         const formData = new FormData()
         formData.append('Original_File', file1.value)
         formData.append('Updated_File', file2.value)
 
         try {
-          await axios.post('https://puv111.app.n8n.cloud/webhook-test/ai-tinkerers-kl-hackathon', formData, {
-            headers: {
-              'Content-Type': 'multipart/form-data',
-            },
-          }).then(response => {
-            console.log('Files uploaded successfully:', response.data)
-            // aiAnalysis.value = response.data[0].message.content.changes.map((change, index) => ({
-            //   id: index + 1,
-            //   section: change.section,
-            //   impact: change.impact,
-            // }
-            aiAnalysis.value = response.data['Input 1'][0].message.content
-          }).catch(error => {
-            console.error('Error uploading files:', error)
-            alert('Error uploading files. Please try again.')
-          })
+          const response = await axios.post(
+            'https://puv111.app.n8n.cloud/webhook-test/ai-tinkerers-kl-hackathon',
+            formData,
+            {
+              headers: {
+                'Content-Type': 'multipart/form-data',
+              },
+            }
+          )
+
+          const content = response.data['Input 1'][0].message.content
+          comparisonResults.value = parseResults(content)
         } catch (error) {
           console.error('Error uploading files:', error)
           alert('Error uploading files. Please try again.')
+        } finally {
+          loading.value = false
         }
       }
-
-      const comparePdfs = async () => {
-        if (!text1.value || !text2.value) {
-          alert('Please upload and parse both PDF files before comparing.')
-          return
-        }
-
-        try {
-          await axios.get('https://puv111.app.n8n.cloud/webhook-test/6309145b-b7c9-42ac-a536-31d798ecf7a7')
-            .then(response => {
-              aiAnalysis.value = response.data[0].message.content.changes.map((change, index) => ({
-                id: index + 1,
-                section: change.section,
-                impact: change.impact,
-              }))
-            }).catch(error => {
-              console.error('Error calling AI service:', error)
-              aiAnalysis.value = 'Unable to perform AI analysis at this time.'
-            })
-        } catch (error) {
-          console.error('Error calling AI service:', error)
-          aiAnalysis.value = 'Unable to perform AI analysis at this time.'
-        }
-      }
-
-      const formatAiAnalysis = computed(() => {
-        return aiAnalysis.value.map((change, index) => ({
-          id: index + 1,
-          section: change.section,
-          impact: change.impact,
-        }))
-      })
 
       return {
         file1,
         file2,
-        text1,
-        text2,
-        html1,
-        html2,
-        tableHeaders,
-        formatAiAnalysis,
+        loading,
+        comparisonResults,
+        significanceCounts,
+        getSignificanceColor,
         loadPdf,
-        comparePdfs,
+        uploadToEndpoint,
+        headers,
+        tableItems,
+        handleRowClick,
       }
     },
   }
 </script>
 <style>
-/* Add any additional styles here if needed */
+.v-data-table>>>.v-data-table__wrapper {
+  overflow-x: auto;
+}
+
+.v-chip {
+  margin-right: 8px;
+}
+
+.caption {
+  font-size: 0.75rem !important;
+}
+
+.expanded-content {
+  background-color: #f5f5f5;
+}
 </style>
