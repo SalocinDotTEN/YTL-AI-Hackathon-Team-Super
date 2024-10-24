@@ -103,7 +103,7 @@
 
         try {
           const response = await axios.post(
-            'https://puv111.app.n8n.cloud/webhook-test/ai-tinkerers-kl-hackathon',
+            'https://puv111.app.n8n.cloud/webhook-test/upload2compare',
             formData,
             {
               headers: {
