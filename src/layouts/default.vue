@@ -88,8 +88,8 @@
         { text: 'Notifications' },
       ]
 
-      const isActive = (path: string) => {
-        return route.path === path
+      const isActive = (path: string | undefined) => {
+        return route.path === (path ?? '')
       }
 
       return { drawer, items, isActive }
