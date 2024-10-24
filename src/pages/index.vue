@@ -32,32 +32,17 @@
       @click="uploadToEndpoint"
     > Compare PDFs </v-btn>
     <v-card>
-      <v-tabs
-        v-model="tab"
-        grow
-      >
+      <v-tabs v-model="tab" grow>
         <v-tab value="comparison">Comparison</v-tab>
         <v-tab value="analysis">Analysis</v-tab>
       </v-tabs>
       <v-card-text>
         <v-tabs-window v-model="tab">
           <v-tabs-window-item value="comparison">
-            <v-textarea
-              label="Overall Summary"
-              :model-value="overallSummary ? overallSummary.summary : ''"
-              outlined
-              readonly
-              rows="5"
-            />
-            <v-data-table
-              item-key="index"
-              :items="comparisonResults"
-              :loading="loading"
-              :no-data-text="loading ? 'Loading...' : 'No data available'"
-            />
+            <div v-html="comparisonResults" />
           </v-tabs-window-item>
           <v-tabs-window-item value="analysis">
-            Analysis Table
+            {{ analysisSummary }}
           </v-tabs-window-item>
         </v-tabs-window>
       </v-card-text>
@@ -74,20 +59,59 @@
       const file2 = ref(null)
       const loading = ref(false)
       const comparisonResults = ref([])
+      const analysisResults = ref([])
       const overallSummary = ref({})
-
-      const tableItems = computed(() => {
-        return comparisonResults.value.map((result, index) => ({
-          ...result,
-          changeCount: index + 1,
-          id: index,
-        }))
-      })
+      const analysisSummary = ref({})
 
       const loadPdf = async fileNumber => {
         const file = fileNumber === 1 ? file1.value : file2.value
         if (!file) return
         comparisonResults.value = []
+      }
+
+      function markdownToHtmlTable (markdownString) {
+        // Split the markdown into lines
+        const lines = markdownString.trim().split('\n')
+
+        // Start building the HTML table
+        let htmlTable = '<table>\n'
+
+        // Process each line
+        lines.forEach((line, index) => {
+          // Remove leading and trailing pipe characters and split by pipes
+          const cells = line.replace(/^\||\|$/g, '').split('|').map(cell => cell.trim())
+
+          // Determine if it's a header row
+          const isHeader = index === 0
+
+          // Start a new row
+          htmlTable += '  <tr>\n'
+
+          // Process each cell
+          cells.forEach(cell => {
+            // Determine if it's a header cell
+            const cellType = isHeader ? 'th' : 'td'
+
+            // Convert bold markdown to <strong> tags
+            cell = cell.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+
+            // Add the cell to the row
+            htmlTable += `    <${cellType}>${cell}</${cellType}>\n`
+          })
+
+          // Close the row
+          htmlTable += '  </tr>\n'
+
+          // Add a horizontal rule after the header row
+          if (isHeader) {
+            htmlTable += '  <tr><td colspan="' + cells.length + '"><hr></td></tr>\n'
+          }
+        })
+
+        // Close the table
+        htmlTable += '</table>'
+
+        return htmlTable
       }
 
       const uploadToEndpoint = async () => {
@@ -97,24 +121,50 @@
         }
 
         loading.value = true
-        const formData = new FormData()
-        formData.append('Original_File', file1.value)
-        formData.append('Updated_File', file2.value)
+        // const formData = new FormData()
+        // formData.append('Original_File', file1.value)
+        // formData.append('Updated_File', file2.value)
 
         try {
-          const response = await axios.post(
-            'https://puv111.app.n8n.cloud/webhook-test/upload2compare',
-            formData,
+          const response = await axios.get(
+            // 'https://6714d38a690bf212c762a3ff.mockapi.io/tinkerers/comparison',
+            `https://puv111.app.n8n.cloud/webhook-test/upload2compareoai?Old%20doc=${file1.value.name}&New%20doc=${file2.value.name}`,
             {
               headers: {
-                'Content-Type': 'multipart/form-data',
+                'Access-Control-Allow-Origin': '*',
+                'Content-Type': 'text/json',
               },
             }
           )
 
-          const content = response.data['Input 1'][0].message.content
-          comparisonResults.value = content.comparison
-          overallSummary.value = content.overall_summary
+          let content = response.data[0].response.text
+          content = content.replace(/markdown/g, '')
+          content = content.replace(/```/g, '')
+          // content = JSON.parse(content)
+          comparisonResults.value = markdownToHtmlTable(content)
+          // changedSections.value = content['Changed Sections']
+          // overallSummary.value = JSON.stringify(content.overall_summary)
+
+          try {
+            const analysisResponse = await axios.get(
+              // 'https://6714d38a690bf212c762a3ff.mockapi.io/tinkerers/analysis',
+              `https://puv111.app.n8n.cloud/webhook-test/analysis?Olddoc=${file1.value.name}&Newdoc=${file2.value.name}`,
+              {
+                headers: {
+                  'Access-Control-Allow-Origin': '*',
+                  'Content-Type': 'text/json',
+                },
+              }
+            )
+            // const analysisContent = analysisResponse.data[0]['Input 1'][0].message.content
+            // analysisResults.value = analysisResponse.data[0].response.text
+            analysisSummary.value = analysisResponse.data[0].response.text
+          } catch (error) {
+            console.error('Error analyzing:', error)
+            alert('Error analyzing. Please try again.')
+          } finally {
+            loading.value = false
+          }
         } catch (error) {
           console.error('Error uploading files:', error)
           alert('Error uploading files. Please try again.')
@@ -126,35 +176,22 @@
       return {
         file1,
         file2,
+        loadPdf,
         loading,
         comparisonResults,
+        analysisResults,
         overallSummary,
-        loadPdf,
+        analysisSummary,
         uploadToEndpoint,
-        tableItems,
       }
     },
     data () {
       return {
-        tab: null,
+        tab: 'comparison',
       }
     },
   }
 </script>
 <style>
-.v-data-table>>>.v-data-table__wrapper {
-  overflow-x: auto;
-}
-
-.v-chip {
-  margin-right: 8px;
-}
-
-.caption {
-  font-size: 0.75rem !important;
-}
-
-.expanded-content {
-  background-color: #f5f5f5;
-}
+/* Add any additional styles here if needed */
 </style>
