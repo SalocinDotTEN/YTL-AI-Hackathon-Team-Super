@@ -47,7 +47,6 @@
             :active="isActive(item.href)"
             :href="item.href"
             link
-            :prepend-icon="item.icon"
             :title="item.text"
           />
         </v-list>
