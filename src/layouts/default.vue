@@ -10,7 +10,7 @@
           <v-btn
             v-for="(item, i) in items"
             :key="i"
-            :active="i === 0"
+            :active="isActive(item.href)"
             class="me-2 text-none"
             slim
             v-bind="item"
@@ -44,7 +44,7 @@
           <v-list-item
             v-for="(item, i) in items"
             :key="i"
-            :active="i === 0"
+            :active="isActive(item.href)"
             :href="item.href"
             link
             :prepend-icon="item.icon"
@@ -68,15 +68,22 @@
 
 <script lang="ts" setup>
   import { shallowRef } from 'vue'
+  import { useRoute } from 'vue-router'
 
+  const route = useRoute()
+  // const routes = router.getRoutes()
   const drawer = shallowRef(false)
 
   const items = [
-    { text: 'Document Comparer' },
+    { text: 'Document Comparer', href: '/' },
     { text: 'Knowledgebase', href: '/knowledgebase' },
     { text: 'Calendar' },
     { text: 'Analytics' },
     { text: 'Inbox' },
     { text: 'Notifications' },
   ]
+
+  const isActive = path => {
+    return route.path === path
+  }
 </script>
