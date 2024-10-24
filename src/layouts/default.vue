@@ -88,7 +88,7 @@
         { text: 'Notifications' },
       ]
 
-      const isActive = path => {
+      const isActive = (path: string) => {
         return route.path === path
       }
 
