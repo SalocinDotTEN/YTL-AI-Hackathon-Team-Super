@@ -132,7 +132,7 @@
             {
               headers: {
                 'Access-Control-Allow-Origin': '*',
-                'Content-Type': 'text/json',
+                'Content-Type': 'application/json',
               },
             }
           )
@@ -152,7 +152,7 @@
               {
                 headers: {
                   'Access-Control-Allow-Origin': '*',
-                  'Content-Type': 'text/json',
+                  'Content-Type': 'application/json',
                 },
               }
             )
