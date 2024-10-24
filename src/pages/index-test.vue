@@ -114,8 +114,8 @@
             }
           )
 
-          const content = response.data[0]['Input 1'][0].message.content
-          comparisonResults.value = content.comparison
+          const content = response.data[0].message.content.comparison
+          comparisonResults.value = content.sections
           overallSummary.value = JSON.stringify(content.overall_summary)
 
           try {
@@ -128,8 +128,7 @@
               }
             )
             // const analysisContent = analysisResponse.data[0]['Input 1'][0].message.content
-            const analysisContent = analysisResponse.data
-            analysisResults.value = analysisContent
+            analysisResults.value = analysisResponse.data
             analysisSummary.value = 'Summary of analysis here'
           } catch (error) {
             console.error('Error analyzing:', error)
