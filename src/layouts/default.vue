@@ -65,24 +65,34 @@
     </v-main></v-app>
 </template>
 
-<script lang="ts" setup>
+<script lang="ts">
   import { shallowRef } from 'vue'
   import { useRoute } from 'vue-router'
 
-  const route = useRoute()
-  // const routes = router.getRoutes()
-  const drawer = shallowRef(false)
+  export default {
+    props: {
+      path: {
+        type: String,
+      },
+    },
+    setup () {
+      const route = useRoute()
+      const drawer = shallowRef(false)
 
-  const items = [
-    { text: 'Document Comparer', href: '/' },
-    { text: 'Knowledgebase', href: '/knowledgebase' },
-    { text: 'Calendar' },
-    { text: 'Analytics' },
-    { text: 'Inbox' },
-    { text: 'Notifications' },
-  ]
+      const items = [
+        { text: 'Document Comparer', href: '/' },
+        { text: 'Knowledgebase', href: '/knowledgebase' },
+        { text: 'Calendar' },
+        { text: 'Analytics' },
+        { text: 'Inbox' },
+        { text: 'Notifications' },
+      ]
 
-  const isActive = path => {
-    return route.path === path
+      const isActive = path => {
+        return route.path === path
+      }
+
+      return { drawer, items, isActive }
+    },
   }
 </script>
