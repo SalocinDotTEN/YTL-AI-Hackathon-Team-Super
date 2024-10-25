@@ -4,6 +4,10 @@ It is an attempt to resolve the [second problem statement](https://github.com/bl
 
 This is the front end part that connects via API to the backend part of the project which is done via n8n.
 
+To run the project, you need to execute the following commands:
+1. `npm install`
+2. `npm run dev`
+
 Many thanks to Joseph Chin for the guidance and support in this project.
 
 The project is done by the following team members:
