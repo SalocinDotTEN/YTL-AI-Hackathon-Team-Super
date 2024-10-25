@@ -6,6 +6,7 @@
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
     "lint": "eslint . --fix --ignore-path .gitignore"
+    "deploy": "gh-pages -d dist"
   },
   "dependencies": {
     "@mdi/font": "7.4.47",
