@@ -30,14 +30,7 @@
       :disabled="!file1 || !file2"
       :loading="loading"
       @click="uploadToEndpoint"
-    > Compare PDFs </v-btn>
-    <v-btn
-      class="mt-4 animate__animated animate__bounceIn"
-      color="primary"
-      :disabled="!file1 || !file2"
-      :loading="loading"
-      @click="analyze"
-    > Analyze </v-btn>
+    > Compare and Analyze PDFs </v-btn>
     <v-card>
       <v-tabs v-model="tab" grow>
         <v-tab value="comparison">Comparison</v-tab>
@@ -151,33 +144,30 @@
           comparisonResults.value = markdownToHtmlTable(content)
           // changedSections.value = content['Changed Sections']
           // overallSummary.value = JSON.stringify(content.overall_summary)
+          try {
+            const analysisResponse = await axios.get(
+              // 'https://6714d38a690bf212c762a3ff.mockapi.io/tinkerers/analysis',
+              `https://pviinv.app.n8n.cloud/webhook/analysis?Olddoc=${file1.value.name}&Newdoc=${file2.value.name}`,
+              {
+                headers: {
+                  'Access-Control-Allow-Origin': '*',
+                  'Content-Type': 'application/json',
+                },
+              }
+            )
+            // const analysisContent = analysisResponse.data[0]['Input 1'][0].message.content
+            // analysisResults.value = analysisResponse.data[0].response.text
+            analysisSummary.value = markdownToHtmlTable(analysisResponse.data[0].response.text)
+          } catch (error) {
+            console.error('Error analyzing:', error)
+            alert('Error analyzing. Please try again.')
+          } finally {
+            loading.value = false
+          }
+
         } catch (error) {
           console.error('Error uploading files:', error)
           alert('Error uploading files. Please try again.')
-        } finally {
-          loading.value = false
-        }
-      }
-
-      const analyze = async () => {
-        loading.value = true
-        try {
-          const analysisResponse = await axios.get(
-            // 'https://6714d38a690bf212c762a3ff.mockapi.io/tinkerers/analysis',
-            `https://pviinv.app.n8n.cloud/webhook/analysis?Olddoc=${file1.value.name}&Newdoc=${file2.value.name}`,
-            {
-              headers: {
-                'Access-Control-Allow-Origin': '*',
-                'Content-Type': 'application/json',
-              },
-            }
-          )
-          // const analysisContent = analysisResponse.data[0]['Input 1'][0].message.content
-          // analysisResults.value = analysisResponse.data[0].response.text
-          analysisSummary.value = markdownToHtmlTable(analysisResponse.data[0].response.text)
-        } catch (error) {
-          console.error('Error analyzing:', error)
-          alert('Error analyzing. Please try again.')
         } finally {
           loading.value = false
         }
@@ -193,7 +183,6 @@
         overallSummary,
         analysisSummary,
         uploadToEndpoint,
-        analyze,
       }
     },
     data () {
