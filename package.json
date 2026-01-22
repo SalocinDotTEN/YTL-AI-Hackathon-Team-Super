@@ -15,7 +15,7 @@
     "diff-match-patch": "^1.0.5",
     "gapi-script": "^1.2.0",
     "pdfjs": "^2.5.3",
-    "pdfjs-dist": "^4.7.76",
+    "pdfjs-dist": "^4.10.38",
     "roboto-fontface": "*",
     "vue": "^3.4.31",
     "vuetify": "^3.6.11"
